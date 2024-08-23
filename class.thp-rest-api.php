@@ -1,5 +1,9 @@
 <?php
 
+if (!function_exists('is_plugin_active')) {
+    include_once(ABSPATH . 'wp-admin/includes/plugin.php');
+}
+
 class THP_REST_API {
 	/**
 	 * Register the REST API routes.
@@ -19,9 +23,30 @@ class THP_REST_API {
 
     public static function thp_get_telegram_handles() {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'telegram_handles';
         $max_handles_count = get_option('thp_max_handles', THP_Admin::DEFAULT_MAX_HANDLES);
 
+        $membership_filter_active = is_plugin_active('simple-membership/simple-wp-membership.php');
+        $simple_membership_id = get_option('thp_simple_membership_id', '');
+
+        if ($membership_filter_active && $simple_membership_id != '') {
+            $results = self::thp_get_handles_simple_membership($simple_membership_id);
+        } else {
+            $results = self::thp_get_handles_no_filter();
+        }
+
+        // Prepare the response
+        $handles = array();
+        foreach ($results as $row) {
+            $user_handles = explode(', ', $row->handles);
+            $handles = array_merge($handles, array_slice($user_handles, 0, $max_handles_count));
+        }
+
+        return new WP_REST_Response($handles, 200);
+    }
+
+    public static function thp_get_handles_no_filter() {
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'telegram_handles';
         // Fetch all handles grouped by user_id
         $results = $wpdb->get_results("
             SELECT user_id, GROUP_CONCAT(handle SEPARATOR ', ') AS handles
@@ -29,18 +54,36 @@ class THP_REST_API {
             GROUP BY user_id
         ");
 
-        // Prepare the response
-        $handles = array();
-        foreach ($results as $row) {
-            // $handles[] = array(
-            //     'user_id' => $row->user_id,
-            //     'handles' => explode(', ', $row->handles),
-            // );
-            $user_handles = explode(', ', $row->handles);
-            $handles += array_slice($user_handles, 0, $max_handles_count);
-        }
+        return $results;
+    }
 
-        return new WP_REST_Response($handles, 200);
+    public static function thp_get_handles_simple_membership($membership_id) {
+        $allow_admins = true;
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'telegram_handles';
+        $membership_table = $wpdb->prefix . 'swpm_members_tbl';
+        $users_table = $wpdb->prefix . 'users';
+
+        // Get user IDs of admins
+        $admin_user_ids = $allow_admins ? get_users(array(
+            'role'    => 'administrator',
+            'fields'  => 'ID',
+        )) : [];
+
+        // Convert array of admin IDs to a comma-separated string
+        $admin_user_ids_str = implode(',', $admin_user_ids);
+
+        // Query to get handles of users with the given membership ID
+        $results = $wpdb->get_results($wpdb->prepare( "
+        SELECT h.user_id, GROUP_CONCAT(h.handle SEPARATOR ', ') AS handles
+        FROM $table_name h
+        INNER JOIN $users_table u ON h.user_id = u.`ID`
+        LEFT JOIN $membership_table m ON u.user_login = m.user_name
+        WHERE m.membership_level = %d AND m.account_state = \"active\" OR h.user_id IN ($admin_user_ids_str)
+        GROUP BY h.user_id, u.user_login
+        ", $membership_id));
+
+        return $results;
     }
 
     public static function thp_basic_authentication_check($request) {
@@ -60,7 +103,6 @@ class THP_REST_API {
         $decoded_credentials = base64_decode($encoded_credentials);
         list($username, $password) = explode(':', $decoded_credentials);
     
-        // Replace with your actual username and password
         $valid_username = get_option('thp_api_username', THP_Admin::DEFAULT_API_USERNAME);
         $valid_password = get_option('thp_api_password', THP_Admin::DEFAULT_API_PASSWORD);
     
