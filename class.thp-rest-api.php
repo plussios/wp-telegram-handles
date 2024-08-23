@@ -20,6 +20,7 @@ class THP_REST_API {
     public static function thp_get_telegram_handles() {
         global $wpdb;
         $table_name = $wpdb->prefix . 'telegram_handles';
+        $max_handles_count = get_option('thp_max_handles', THP_Admin::DEFAULT_MAX_HANDLES);
 
         // Fetch all handles grouped by user_id
         $results = $wpdb->get_results("
@@ -35,7 +36,8 @@ class THP_REST_API {
             //     'user_id' => $row->user_id,
             //     'handles' => explode(', ', $row->handles),
             // );
-            $handles += explode(', ', $row->handles);
+            $user_handles = explode(', ', $row->handles);
+            $handles += array_slice($user_handles, 0, $max_handles_count);
         }
 
         return new WP_REST_Response($handles, 200);
