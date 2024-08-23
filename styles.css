@@ -1,0 +1,37 @@
+/* Ensure consistent spacing and alignment */
+#thp-telegram-handles-form {
+    margin-top: 20px;
+    max-width: 600px;
+}
+
+#thp-telegram-handles-form h3 {
+    font-size: 1.5em;
+    margin-bottom: 15px;
+}
+
+#thp-telegram-handles-form .form-table th {
+    font-weight: bold;
+    text-align: left;
+    padding-bottom: 10px;
+}
+
+#thp-telegram-handles-form .form-table td {
+    padding-bottom: 15px;
+}
+
+#thp-telegram-handles-form .wp-block-button__link {
+    background-color: #000; /* Use theme's primary color */
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 3px;
+    text-decoration: none;
+}
+
+#thp-message {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    border-radius: 3px;
+}
