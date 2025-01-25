@@ -21,6 +21,16 @@ class THP_REST_API {
         ));
     }
 
+    public static function thp_get_manual_telegram_handles() {
+        global $wpdb;
+        $manual_handles_string = get_option('thp_manual_handles', '');
+
+        $handles = explode("\n", str_replace("\r\n","\n", $manual_handles_string));
+        $result = array_filter(array_map('trim', $handles));
+
+        return $result;
+    }
+
     public static function thp_get_telegram_handles() {
         global $wpdb;
         $max_handles_count = get_option('thp_max_handles', THP_Admin::DEFAULT_MAX_HANDLES);
@@ -40,6 +50,9 @@ class THP_REST_API {
             $user_handles = explode(', ', $row->handles);
             $handles = array_merge($handles, array_slice($user_handles, 0, $max_handles_count));
         }
+
+        $manual_handles = self::thp_get_manual_telegram_handles();
+        $handles = array_values(array_unique(array_merge($handles, $manual_handles)));
 
         return new WP_REST_Response($handles, 200);
     }

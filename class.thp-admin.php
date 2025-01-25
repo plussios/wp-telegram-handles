@@ -46,6 +46,7 @@ class THP_Admin {
             update_option('thp_api_username', sanitize_text_field($_POST['thp_api_username']));
             update_option('thp_api_password', sanitize_text_field($_POST['thp_api_password']));
             update_option('thp_simple_membership_id', sanitize_text_field($_POST['thp_simple_membership_id']));
+            update_option('thp_manual_handles', sanitize_textarea_field($_POST['thp_manual_handles']));
     
             echo '<div class="updated"><p>Settings saved.</p></div>';
         }
@@ -55,6 +56,7 @@ class THP_Admin {
         $api_username = get_option('thp_api_username', self::DEFAULT_API_USERNAME);
         $api_password = get_option('thp_api_password', self::DEFAULT_API_PASSWORD);
         $simple_membership_id = get_option('thp_simple_membership_id', '');
+        $manual_handles = get_option('thp_manual_handles', '');
     
         ?>
         <div class="wrap">
@@ -88,6 +90,13 @@ class THP_Admin {
                         <td>
                             <input type="text" name="thp_simple_membership_id" id="thp_simple_membership_id" value="<?php echo esc_attr($simple_membership_id); ?>" class="regular-text" />
                             <p class="description">Set the WP Simple Membership Level ID.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="thp_manual_handles">Manual Telegram Handles</label></th>
+                        <td>
+                            <textarea name="thp_manual_handles" id="thp_manual_handles" rows="10" cols="40"><?php echo esc_attr($manual_handles); ?></textarea>
+                            <p class="description">Add Telegram handles to always allow in the API. Put each handle on a new line.</p>
                         </td>
                     </tr>
                 </table>
